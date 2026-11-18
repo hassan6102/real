@@ -1,0 +1,90 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function uDoc()    { return get(/databases/$(database)/documents/users/$(request.auth.uid)); }
+    function active()  { return request.auth != null
+                          && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+                          && uDoc().data.status == 'active'; }
+    function isAdmin() { return active() && uDoc().data.role == 'admin'; }
+    function can(p)    { return isAdmin() || (active() && uDoc().data.get('permissions', {}).get(p, false) == true); }
+    function isNow(f)  { return request.resource.data[f] == request.time; }
+
+    // الأعضاء: لا أحد يعدّل دوره/صلاحياته/حالته بنفسه، ولا يعدّل أدمن أدمن آخر.
+    match /users/{uid} {
+      allow get: if active() && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isAdmin() && request.resource.data.role in ['admin', 'member']
+                    && request.resource.data.status in ['active', 'suspended'];
+      allow update: if (request.auth.uid == uid && active()
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastLoginAt']))
+                    || (isAdmin() && request.auth.uid != uid && resource.data.role != 'admin');
+      allow delete: if false;
+
+      match /favorites/{propertyId} {
+        allow read, write: if active() && request.auth.uid == uid;
+      }
+    }
+
+    match /properties/{id} {
+      allow read: if active();
+      allow create: if active()
+        && request.resource.data.createdBy == request.auth.uid && isNow('createdAt')
+        && request.resource.data.status in ['available','reserved','sold','rented','suspended','unavailable']
+        && request.resource.data.transactionType in ['sale','rent_new','rent_old']
+        && (!('price' in request.resource.data) || request.resource.data.price == null || request.resource.data.price is number)
+        && (!('area' in request.resource.data) || request.resource.data.area == null || request.resource.data.area is number);
+      allow update: if active()
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.updatedBy == request.auth.uid && isNow('updatedAt')
+        && request.resource.data.status in ['available','reserved','sold','rented','suspended','unavailable'];
+      allow delete: if isAdmin();
+
+      // بيانات المالك والعمولة وأقل سعر والمديونيات (وثيقة منفصلة بصلاحية مستقلة).
+      match /private/{docId} {
+        allow create: if active();
+        allow read, update: if can('canViewOwnerData');
+        allow delete: if isAdmin();
+      }
+    }
+
+    match /customers/{id} {
+      allow read, create, update: if active();
+      allow delete: if isAdmin();
+      match /contacts/{cid} { allow read, create, update: if active(); allow delete: if isAdmin(); }
+    }
+    match /customerPhones/{phone} {
+      allow read, create, delete: if active();
+      allow update: if false;
+    }
+    match /customerRequests/{id} {
+      allow read, create, update: if active();
+      allow delete: if isAdmin();
+      match /followUps/{fid} { allow read, create, update: if active(); allow delete: if isAdmin(); }
+    }
+
+    // الصفقات تحمل العمولة الفعلية.
+    match /deals/{id} {
+      allow read: if can('canViewCommissions');
+      allow create: if active();
+      allow update, delete: if isAdmin();
+    }
+
+    // سجل النشاطات: إضافة فقط باسم صاحب الحساب.
+    match /activityLogs/{id} {
+      allow read: if active();
+      allow create: if active() && request.resource.data.userId == request.auth.uid && isNow('createdAt');
+      allow update, delete: if false;
+    }
+
+    match /savedSearches/{id} {
+      allow create: if active() && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if active() && resource.data.userId == request.auth.uid;
+    }
+
+    match /settings/{id} {
+      allow read: if active();
+      allow write: if isAdmin() || (id == 'counters' && active());
+    }
+  }
+}

@@ -1,0 +1,1 @@
+{ "name": "real-estate-system", "private": true, "type": "module", "scripts": { "test": "node --test" } }

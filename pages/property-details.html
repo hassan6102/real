@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>تفاصيل العقار - إدارة العقارات</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="../css/style.css" rel="stylesheet">
+</head>
+<body class="booting" >
+<main id="page-content" hidden>
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-1"><h1 class="page-title" id="title"></h1><span id="status"></span></div>
+<p class="text-muted small" id="meta"></p>
+<div class="d-flex flex-wrap gap-2 mb-3">
+<a id="edit" class="btn btn-navy" href="#"><i class="bi bi-pencil ms-1"></i>تعديل</a>
+<button id="openStatus" class="btn btn-gold">تغيير الحالة</button>
+<button id="copy" class="btn btn-outline-secondary">نسخ بيانات العقار</button>
+<button id="wa" class="btn btn-outline-success">مشاركة واتساب</button>
+ <span id="favSlot"></span>
+<button id="delete" class="btn btn-outline-danger" hidden>حذف نهائي</button></div>
+<div id="details"><div class="text-muted">جارٍ التحميل...</div></div>
+<div class="modal fade" id="statusModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h2 class="modal-title fs-5">تغيير حالة العقار</h2><button class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button></div>
+<div class="modal-body"><label class="form-label" for="newStatus">الحالة الجديدة</label><select id="newStatus" class="form-select mb-3"></select>
+<div id="fpBox" hidden><label class="form-label" for="finalPrice">السعر النهائي (جنيه)</label><input id="finalPrice" class="form-control" inputmode="decimal"><div class="form-text">سيُنقل العقار إلى الأرشيف ولن يُحذف.</div></div></div>
+<div class="modal-footer"><button class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button><button id="confirmStatus" class="btn btn-navy">تأكيد</button></div></div></div></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script type="module" src="../js/property-details.js"></script>
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>تفاصيل العميل - إدارة العقارات</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="../css/style.css" rel="stylesheet">
+</head>
+<body class="booting">
+<main id="page-content" hidden>
+  <!-- ترويسة صفحة العميل -->
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-1">
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <h1 class="page-title" id="custTitle">جارٍ التحميل...</h1>
+      <span id="custBadges" class="d-flex gap-1"></span>
+    </div>
+    <a class="btn btn-outline-secondary btn-sm" href="customers.html"><i class="bi bi-arrow-right ms-1"></i>قائمة العملاء</a>
+  </div>
+  <p class="text-muted small mb-3" id="custMeta"></p>
+
+  <!-- أزرار الإجراءات السريعة -->
+  <div class="d-flex flex-wrap gap-2 mb-4" id="actionBar">
+    <a id="editBtn" class="btn btn-navy" href="#"><i class="bi bi-pencil ms-1"></i>تعديل العميل</a>
+    <a id="callBtn" class="btn btn-outline-dark" href="#"><i class="bi bi-telephone ms-1"></i>اتصال</a>
+    <a id="waBtn" class="btn btn-outline-success" href="#" target="_blank" rel="noopener"><i class="bi bi-whatsapp ms-1"></i>واتساب</a>
+    <button id="copyPhoneBtn" type="button" class="btn btn-outline-secondary"><i class="bi bi-clipboard ms-1"></i>نسخ الرقم</button>
+    <button id="deleteCustBtn" type="button" class="btn btn-outline-danger ms-auto" hidden><i class="bi bi-trash ms-1"></i>حذف العميل</button>
+  </div>
+
+  <div id="errorAlert" class="alert alert-danger" hidden></div>
+
+  <!-- التبويبات الثلاثة -->
+  <ul class="nav nav-tabs mb-3" id="customerTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#tab-info" type="button" role="tab" aria-selected="true">
+        <i class="bi bi-person-vcard ms-1"></i>بيانات العميل الأساسية
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="contacts-tab" data-bs-toggle="tab" data-bs-target="#tab-contacts" type="button" role="tab" aria-selected="false">
+        <i class="bi bi-telephone-inbound ms-1"></i>سجل التواصل <span class="badge rounded-pill bg-secondary ms-1" id="contactsCountBadge">0</span>
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="requests-tab" data-bs-toggle="tab" data-bs-target="#tab-requests" type="button" role="tab" aria-selected="false">
+        <i class="bi bi-card-checklist ms-1"></i>الطلبات العقارية <span class="badge rounded-pill bg-secondary ms-1" id="requestsCountBadge">0</span>
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content">
+    <!-- التبويب الأول: بيانات العميل الأساسية -->
+    <div class="tab-pane fade show active" id="tab-info" role="tabpanel" aria-labelledby="info-tab">
+      <div class="panel">
+        <h2>المعلومات الأساسية</h2>
+        <div class="p-3" id="basicInfoBody">
+          <div class="text-muted">جارٍ تحميل البيانات...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- التبويب الثاني: سجل التواصل -->
+    <div class="tab-pane fade" id="tab-contacts" role="tabpanel" aria-labelledby="contacts-tab">
+      <div class="row g-3">
+        <!-- نموذج صغير لإضافة تواصل جديد -->
+        <div class="col-12 col-lg-5">
+          <div class="panel">
+            <h2><i class="bi bi-plus-circle ms-1"></i>تسجيل تواصل جديد</h2>
+            <form id="contactForm" class="p-3" novalidate>
+              <div class="row g-2">
+                <div class="col-12 col-sm-6">
+                  <label class="form-label small fw-semibold" for="c_type">نوع التواصل</label>
+                  <select id="c_type" class="form-select" required></select>
+                </div>
+                <div class="col-12 col-sm-6">
+                  <label class="form-label small fw-semibold" for="c_date">تاريخ التواصل</label>
+                  <input type="date" id="c_date" class="form-control" required>
+                </div>
+                <div class="col-12 col-sm-6">
+                  <label class="form-label small fw-semibold" for="c_outcome">نتيجة التواصل</label>
+                  <select id="c_outcome" class="form-select" required></select>
+                </div>
+                <div class="col-12 col-sm-6">
+                  <label class="form-label small fw-semibold" for="c_nextDate">موعد متابعة قادم (اختياري)</label>
+                  <input type="date" id="c_nextDate" class="form-control">
+                </div>
+                <div class="col-12">
+                  <label class="form-label small fw-semibold" for="c_notes">ملخص وتفاصيل التواصل <span class="text-danger">*</span></label>
+                  <textarea id="c_notes" class="form-control" rows="3" placeholder="اكتب ما دار في المكالمة أو المعاينة وملاحظات العميل..." required></textarea>
+                  <div class="invalid-feedback">يرجى كتابة ملخص التواصل.</div>
+                </div>
+                <div class="col-12 mt-3">
+                  <button type="submit" id="saveContactBtn" class="btn btn-navy w-100">
+                    <i class="bi bi-check2-circle ms-1"></i>حفظ سجل التواصل
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- قائمة سجل التواصل -->
+        <div class="col-12 col-lg-7">
+          <div class="panel">
+            <h2><i class="bi bi-clock-history ms-1"></i>تاريخ التواصل مع العميل</h2>
+            <div class="p-3" id="contactsList">
+              <div class="text-muted">جارٍ تحميل سجل التواصل...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- التبويب الثالث: الطلبات العقارية -->
+    <div class="tab-pane fade" id="tab-requests" role="tabpanel" aria-labelledby="requests-tab">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <h2 class="fs-5 fw-bold m-0">طلبات العميل العقارية</h2>
+        <button type="button" class="btn btn-gold" id="openReqModalBtn">
+          <i class="bi bi-plus-lg ms-1"></i>إضافة طلب جديد
+        </button>
+      </div>
+      <div id="requestsList">
+        <div class="text-muted">جارٍ تحميل الطلبات...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- نافذة (Modal) إضافة طلب عقاري جديد -->
+  <div class="modal fade" id="requestModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title fs-5">إضافة طلب عقاري للعميل</h3>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+        </div>
+        <div class="modal-body">
+          <form id="requestForm" novalidate>
+            <div class="row g-3">
+              <div class="col-12 col-md-4">
+                <label class="form-label" for="r_tx">نوع العملية <span class="text-danger">*</span></label>
+                <select id="r_tx" class="form-select" required></select>
+                <div class="invalid-feedback">اختر نوع العملية.</div>
+              </div>
+              <div class="col-12 col-md-4">
+                <label class="form-label" for="r_type">نوع العقار المطلوب <span class="text-danger">*</span></label>
+                <select id="r_type" class="form-select" required></select>
+                <div class="invalid-feedback">اختر نوع العقار.</div>
+              </div>
+              <div class="col-12 col-md-4">
+                <label class="form-label" for="r_status">حالة الطلب</label>
+                <select id="r_status" class="form-select"></select>
+              </div>
+
+              <div class="col-12 col-md-6">
+                <label class="form-label" for="r_city">المدينة المطلوبة</label>
+                <input type="text" id="r_city" class="form-control" placeholder="مثال: الخانكة، العبور...">
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label" for="r_districts">المناطق أو الأحياء المفضلة</label>
+                <input type="text" id="r_districts" class="form-control" placeholder="مثال: الحي الأول، القلج (افصل بفاصلة)">
+              </div>
+
+              <div class="col-6 col-md-3">
+                <label class="form-label" for="r_budgetMin">الميزانية من (جنيه)</label>
+                <input type="text" id="r_budgetMin" class="form-control" inputmode="decimal" placeholder="700,000">
+                <div class="invalid-feedback" id="err_budgetMin"></div>
+              </div>
+              <div class="col-6 col-md-3">
+                <label class="form-label" for="r_budgetMax">الميزانية حتى (جنيه)</label>
+                <input type="text" id="r_budgetMax" class="form-control" inputmode="decimal" placeholder="1,200,000">
+                <div class="invalid-feedback" id="err_budgetMax"></div>
+              </div>
+              <div class="col-6 col-md-3">
+                <label class="form-label" for="r_areaMin">المساحة من (م²)</label>
+                <input type="text" id="r_areaMin" class="form-control" inputmode="decimal" placeholder="100">
+                <div class="invalid-feedback" id="err_areaMin"></div>
+              </div>
+              <div class="col-6 col-md-3">
+                <label class="form-label" for="r_areaMax">المساحة حتى (م²)</label>
+                <input type="text" id="r_areaMax" class="form-control" inputmode="decimal" placeholder="160">
+                <div class="invalid-feedback" id="err_areaMax"></div>
+              </div>
+
+              <div class="col-6 col-md-3">
+                <label class="form-label" for="r_roomsMin">أقل عدد غرف</label>
+                <input type="text" id="r_roomsMin" class="form-control" inputmode="numeric" placeholder="3">
+              </div>
+              <div class="col-6 col-md-3">
+                <label class="form-label" for="r_bathroomsMin">أقل عدد حمامات</label>
+                <input type="text" id="r_bathroomsMin" class="form-control" inputmode="numeric" placeholder="1">
+              </div>
+              <div class="col-6 col-md-3">
+                <label class="form-label" for="r_floorPref">تفضيل الدور</label>
+                <select id="r_floorPref" class="form-select"></select>
+              </div>
+              <div class="col-6 col-md-3">
+                <label class="form-label" for="r_finishing">التشطيب المطلوب</label>
+                <select id="r_finishing" class="form-select"></select>
+              </div>
+
+              <div class="col-6 col-md-6">
+                <label class="form-label" for="r_payment">طريقة الدفع</label>
+                <select id="r_payment" class="form-select"></select>
+              </div>
+              <div class="col-6 col-md-6">
+                <label class="form-label" for="r_priority">أولوية الطلب</label>
+                <select id="r_priority" class="form-select"></select>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label" for="r_notes">مواصفات وملاحظات إضافية</label>
+                <textarea id="r_notes" class="form-control" rows="3" placeholder="أي اشتراطات خاصة مثل وجود أسانسير، غاز طبيعي، واجهة بحرية، أو شروط تقسيط..."></textarea>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+          <button type="button" class="btn btn-navy" id="saveReqBtn"><i class="bi bi-check2-circle ms-1"></i>حفظ الطلب</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script type="module" src="../js/customer-details.js"></script>
+</body>
+</html>

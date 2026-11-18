@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>العملاء - إدارة العقارات</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="../css/style.css" rel="stylesheet">
+</head>
+<body class="booting">
+<main id="page-content" hidden>
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h1 class="page-title">إدارة العملاء</h1>
+    <div class="d-flex align-items-center gap-2">
+      <div class="btn-group" role="group" aria-label="طريقة العرض">
+        <button type="button" id="viewCards" class="btn btn-outline-secondary active" title="عرض البطاقات"><i class="bi bi-grid-3x3-gap"></i></button>
+        <button type="button" id="viewTable" class="btn btn-outline-secondary" title="عرض الجدول"><i class="bi bi-table"></i></button>
+      </div>
+      <a class="btn btn-gold" href="customer-form.html"><i class="bi bi-person-plus ms-1"></i>إضافة عميل</a>
+    </div>
+  </div>
+
+  <div class="fsec mb-3">
+    <div class="row g-2 align-items-center">
+      <div class="col-12 col-lg-6">
+        <div class="input-group">
+          <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+          <input type="search" id="searchInput" class="form-control" placeholder="بحث سريع بالاسم، رقم الهاتف، الكود، المدينة، أو الملاحظات..." autocomplete="off">
+        </div>
+      </div>
+      <div class="col-6 col-lg-2">
+        <select id="typeFilter" class="form-select" aria-label="تصنيف العميل">
+          <option value="">كل التصنيفات</option>
+        </select>
+      </div>
+      <div class="col-6 col-lg-2">
+        <select id="statusFilter" class="form-select" aria-label="حالة العميل">
+          <option value="">كل الحالات</option>
+        </select>
+      </div>
+      <div class="col-12 col-lg-2 d-flex gap-2">
+        <button type="button" id="resetFilter" class="btn btn-outline-secondary w-100">إعادة ضبط</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="errorBox" class="alert alert-danger" hidden></div>
+  <div id="count" class="text-muted small mb-2"></div>
+  <div id="list"><div class="text-muted">جارٍ تحميل العملاء...</div></div>
+  <div class="text-center mt-4">
+    <button id="more" class="btn btn-outline-secondary" hidden><i class="bi bi-arrow-down-circle ms-1"></i>تحميل المزيد</button>
+  </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script type="module" src="../js/customers.js"></script>
+</body>
+</html>
