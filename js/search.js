@@ -64,7 +64,7 @@ async function loadNear() {
 function renderResults(total) {
   const r = state.results; r.forEach(d => (byId[d.id] = d.data()));
   $('count').textContent = r.length || state.exhausted ? (total != null ? `تم العثور على ${fmtNumber(total)} عقارًا مطابقًا.` : state.exhausted ? `تم العثور على ${r.length} عقارًا مطابقًا.` : `تم العثور على ${r.length} عقارًا حتى الآن.`) : '';
-  $('list').innerHTML = r.length ? r.map(cardHtml).join('') : state.exhausted ? '<div class="empty w-100"><i class="bi bi-search"></i><p>لا توجد عقارات مطابقة. جرّب تخفيف بعض الفلاتر.</p></div>' : '';
+  $('list').innerHTML = r.length ? r.map(p => cardHtml(p)).join('') : state.exhausted ? '<div class="empty w-100"><i class="bi bi-search"></i><p>لا توجد عقارات مطابقة. جرّب تخفيف بعض الفلاتر.</p></div>' : '';
   $('more').hidden = state.exhausted;
   loadNear();
   $('note').textContent = !state.exhausted ? `تم فحص ${state.scanned} عقارًا${r.length ? '' : ' دون نتائج مطابقة'}. اضغط "متابعة البحث" لفحص المزيد.` : '';

@@ -18,8 +18,7 @@ function render() {
   const all = [...first, ...more];
   all.forEach(d => (byId[d.id] = d.data()));
   document.getElementById('count').textContent = all.length ? `تم تحميل ${all.length} عقار${hasMore ? ' (يوجد المزيد)' : ''}` : '';
-  document.getElementById('list').innerHTML = all.length ? all.map(cardHtml).join('') :
-    `<div class="empty w-100"><i class="bi bi-buildings"></i><p>${archived ? 'الأرشيف فارغ.' : 'لا توجد عقارات هنا بعد.'}</p>${archived ? '' : '<a class="btn btn-navy" href="add-property.html">إضافة عقار</a>'}</div>`;
+document.getElementById('list').innerHTML = all.length ? all.map(p => cardHtml(p)).join('') :    `<div class="empty w-100"><i class="bi bi-buildings"></i><p>${archived ? 'الأرشيف فارغ.' : 'لا توجد عقارات هنا بعد.'}</p>${archived ? '' : '<a class="btn btn-navy" href="add-property.html">إضافة عقار</a>'}</div>`;
   document.getElementById('more').hidden = !hasMore;
 }
 // الصفحة الأولى لحظية، وما بعدها يُجلب عند الطلب.
