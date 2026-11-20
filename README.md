@@ -24,3 +24,26 @@
   - نوع المعاملة ونوع العقار والمدينة شروط استبعاد؛ المنطقة (30) والميزانية (30) والمساحة (20) والغرف (20) تُحسب كنسبة من المعايير المذكورة في الطلب فقط.
   - المفضلة في `users/{uid}/favorites/{propertyId}` (قواعدها موجودة أصلًا وتقصرها على صاحب الحساب). لا تتطلب تغيير القواعد ولا فهارس جديدة.
   - **المتبقي**: التقارير، سجل النشاطات (مع تقييد قراءته بالمدير)، إدارة الفريق (تحتاج Cloud Functions)، الإعدادات.
+
+
+---
+
+# المرحلة التطويرية: فصل العقار عن عروض السماسرة
+
+## نموذج البيانات الجديد (متوافق مع القديم)
+- `properties/{id}`: الوحدة العقارية. أُضيف: `propertyNo` (كود رقمي ثابت)، `offersSummary` (`activeCount, totalCount, minPrice, maxPrice`)، وأصبح `price` = **أقل عرض نشط** (نسخة مُشتقة لتعمل فلاتر السعر والترتيب خادميًا).
+- `properties/{id}/offers/{offerId}`: عام (يقرؤه كل الفريق): `price, status(active|unavailable|expired), sourceKind, propertyId, createdBy/At, updatedBy/At`.
+- `properties/{id}/offers/{offerId}/private/data`: خاص بصلاحية `canViewOwnerData`: `brokerName, brokerPhone, brokerPhoneKey, commissionAgreed/Percent/Value/Payer, minPrice, notes` (+ `legacy` للعروض المُرحَّلة).
+- رقم الهاتف **غير فريد** ولا يُستعلم عنه ولا يُستخدم لمنع شيء.
+- `settings/counters.propertyNo`: عداد الأكواد (1001 فأكثر). القواعد تسمح بزيادته بواحد فقط.
+- `migrations/offers_v1`: تقرير الترحيل (مدير فقط).
+- حقول `location.governorate/city` القديمة **تبقى في المستندات** ولا تُقرأ ولا تُمسح عند التعديل.
+
+## خطوات النشر (يدويًا، بالترتيب)
+1. `firebase deploy --only firestore:rules,firestore:indexes` (فهرس جديد + استثناء حقل `favorites.propertyId` للاستعلام الجماعي). انتظر اكتمال بناء الفهارس.
+2. **قبل أي ترحيل:** صدّر Firestore من Console/gcloud (`gcloud firestore export gs://BUCKET/backup`) ونزّل النسخة JSON من صفحة "ترحيل العروض".
+3. جرّب كل شيء أولًا على مشروع تجريبي أو Firebase Emulator (`firebase emulators:start --only firestore`).
+4. افتح "ترحيل العروض" (مدير) ← نسخة احتياطية ← تجربة بلا كتابة ← تنفيذ. يمكن إعادة التشغيل بأمان.
+
+## الاختبارات
+`npm test` (134 اختبارًا محليًا: المحلل، العروض، الترحيل، التكرار، البحث الذكي، محاكاة تنافس الأكواد، فحص الواردات). لا تغطي Firebase الحقيقي ولا القواعد ولا الواجهة في المتصفح.

@@ -1,5 +1,5 @@
 import { guard, toast } from './layout.js';
-import { listQuery, getDocs } from './services/properties.js';
+import { listQuery, getDocs, findByCode } from './services/properties.js';
 import { onSnapshot } from './firebase-config.js';
 import { cardHtml, bindCardActions } from './property-card.js';
 import { attachFavorites } from './favorites-ui.js';
@@ -34,3 +34,16 @@ document.getElementById('more').onclick = async e => {
 };
 bindCardActions(document.getElementById('list'), id => byId[id]);
 attachFavorites(document.getElementById('list'), user, id => byId[id]);
+
+// بحث سريع بالكود الرقمي (أو القديم P-000123): يفتح العقار مباشرة إن وُجد واحد، وإلا يعرض النتائج.
+document.getElementById('codeForm').onsubmit = async e => {
+  e.preventDefault();
+  const q = document.getElementById('codeq').value.trim(); if (!q) return location.reload();
+  try {
+    const found = await findByCode(q);
+    if (!found.length) return toast('لا يوجد عقار بهذا الكود.', 'warning');
+    if (found.length === 1) return (location.href = `property-details.html?id=${found[0].id}`);
+    found.forEach(p => (byId[p.id] = p));
+    document.getElementById('list').innerHTML = found.map(p => cardHtml({ id: p.id, data: () => p })).join('');
+  } catch (ex) { console.error(ex); toast('تعذّر البحث بالكود.', 'danger'); }
+};

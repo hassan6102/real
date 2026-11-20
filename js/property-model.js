@@ -5,8 +5,6 @@ export const BOOL = { yes: 'نعم', no: 'لا', unknown: 'غير معروف' };
 export const AV = { yes: 'متوفر', no: 'غير متوفر', unknown: 'غير معروف' };
 export const FINISHING = { none: 'بدون تشطيب', red_brick: 'على الطوب الأحمر', semi: 'نصف تشطيب', lux: 'لوكس', super_lux: 'سوبر لوكس', high_lux: 'هاي لوكس', ultra: 'ألترا سوبر لوكس', hotel: 'تشطيب فندقي' };
 const COND = { good: 'جيدة', average: 'متوسطة', poor: 'سيئة' };
-const PAYER = { owner: 'المالك', buyer: 'المشتري', both: 'الطرفان' };
-const OWNER_KIND = { direct: 'مباشر', broker: 'وسيط' };
 
 // F(المسار، التسمية، النوع t|n|a|s، الخيارات، أعلام: r مطلوب، p خاص بالمالك، a عند الإضافة فقط)
 const F = (k, l, t = 't', o, fl = '') => ({ k, l, t, o, r: fl.includes('r'), p: fl.includes('p'), addOnly: fl.includes('a') });
@@ -17,8 +15,8 @@ export const GROUPS = [
   { id: 'basic', title: 'البيانات الأساسية', open: true, fields: [
     F('propertyType', 'نوع العقار', 's', PROPERTY_TYPES, 'r'), F('transactionType', 'نوع العملية', 's', TRANSACTION_TYPES, 'r'),
     F('status', 'حالة العقار', 's', STATUSES, 'a'),
-    F('location.governorate', 'المحافظة', 't', 0, 'r'), F('location.city', 'المدينة', 't', 0, 'r'), F('location.district', 'المنطقة'),
-    F('price', 'السعر المطلوب (جنيه)', 'n', 0, 'r'), F('area', 'المساحة (متر)', 'n', 0, 'r') ] },
+    F('location.district', 'المنطقة'),
+    F('price', 'السعر (يُسجَّل كأول عرض)', 'n', 0, 'r'), F('area', 'المساحة (متر)', 'n', 0, 'r') ] },
   { id: 'eng', title: 'الموقع والتفاصيل الهندسية', fields: [
     F('location.street', 'اسم الشارع'), F('location.buildingNo', 'رقم العمارة'), F('location.unitNo', 'رقم الوحدة'),
     F('location.mainStreet', 'أقرب شارع رئيسي'), F('location.landmark', 'أقرب معلم'), F('location.mapUrl', 'رابط Google Maps'), F('location.streetWidth', 'عرض الشارع (متر)', 'n'),
@@ -45,21 +43,46 @@ export const GROUPS = [
     F('financialDetails.negotiable', 'السعر قابل للتفاوض؟', 's', BOOL), F('financialDetails.paymentSystem', 'نظام الدفع'), F('financialDetails.installment', 'يوجد تقسيط؟', 's', BOOL),
     F('financialDetails.downPayment', 'المقدم', 'n'), F('financialDetails.installmentValue', 'قيمة القسط', 'n'), F('financialDetails.installmentMonths', 'مدة التقسيط (شهر)', 'n'),
     F('financialDetails.priceIncludesCommission', 'السعر شامل العمولة؟', 's', BOOL),
-    F('financial.minPrice', 'أقل سعر متوقع', 'n', 0, 'p'), F('financial.commissionAgreed', 'العمولة المتفق عليها', 't', 0, 'p'), F('financial.commissionPercent', 'نسبة العمولة %', 'n', 0, 'p'),
-    F('financial.commissionValue', 'قيمة العمولة', 'n', 0, 'p'), F('financial.commissionPayer', 'العمولة على', 's', PAYER, 'p'), F('financial.debts', 'مديونيات أو مستحقات', 'a', 0, 'p'),
+    F('financial.debts', 'مديونيات أو مستحقات', 'a', 0, 'p'),
     F('legalDetails.ownershipType', 'نوع الملكية'), F('legalDetails.registered', 'عقد مسجل؟', 's', BOOL), F('legalDetails.preliminary', 'عقد ابتدائي؟', 's', BOOL),
     F('legalDetails.signatureValid', 'صحة توقيع؟', 's', BOOL), F('legalDetails.validity', 'صحة ونفاذ؟', 's', BOOL), F('legalDetails.powerOfAttorney', 'توكيل؟', 's', BOOL),
     F('legalDetails.buildingLicense', 'رخصة مباني؟', 's', BOOL), F('legalDetails.reconciliation', 'موقف التصالح'), F('legalDetails.landShare', 'حصة في الأرض'),
     F('legalDetails.violations', 'وجود مخالفات؟', 's', BOOL), F('legalDetails.disputes', 'نزاعات قانونية؟', 's', BOOL), F('legalDetails.notes', 'ملاحظات قانونية', 'a') ] },
   { id: 'owner', title: 'بيانات المالك والملاحظات', fields: [
     F('owner.name', 'اسم المالك', 't', 0, 'p'), F('owner.phone', 'هاتف المالك الأساسي', 't', 0, 'p'), F('owner.phone2', 'رقم إضافي', 't', 0, 'p'), F('owner.whatsapp', 'واتساب', 't', 0, 'p'),
-    F('owner.kind', 'مباشر أم وسيط؟', 's', OWNER_KIND, 'p'), F('owner.brokerName', 'اسم الوسيط', 't', 0, 'p'), F('owner.brokerPhone', 'رقم الوسيط', 't', 0, 'p'),
-    F('owner.commission', 'العمولة المطلوبة', 't', 0, 'p'), F('owner.notes', 'ملاحظات التعامل مع المالك', 'a', 0, 'p'),
-    F('notes.general', 'ملاحظات عامة', 'a'), F('notes.details', 'تفاصيل إضافية', 'a'), F('notes.team', 'ملاحظات خاصة بالفريق', 'a'), F('notes.condition', 'ملاحظات عن الحالة', 'a') ] }
+    F('owner.notes', 'ملاحظات التعامل مع المالك', 'a', 0, 'p'),
+    F('notes.general', 'ملاحظات عامة', 'a'), F('notes.details', 'تفاصيل إضافية', 'a'), F('notes.team', 'ملاحظات خاصة بالفريق', 'a'), F('notes.condition', 'ملاحظات عن الحالة', 'a'),
+    F('notes.sourceText', 'النص الأصلي للوصف الجاهز (خاص)', 'a', 0, 'p') ] }
 ];
 export const ALL_FIELDS = GROUPS.flatMap(g => g.fields);
 
 export const archiveFor = status => !['available', 'reserved'].includes(status);
+
+/** كود العرض للمستخدم: الرقمي إن وُجد، وإلا الكود القديم (P-000123) حتى يُرحَّل. */
+export const displayCode = p => (p?.propertyNo != null ? String(p.propertyNo) : String(p?.code ?? ''));
+
+/** يحوّل مدخل بحث الكود إلى {no} رقمي أو {code} نصي. الأرقام العربية مقبولة. */
+export function parseCodeQuery(input = '') {
+  const s = toLatinDigits(String(input)).trim();
+  if (!s) return null;
+  if (/^\d+$/.test(s)) return { no: Number(s), code: s };
+  return { code: s.toUpperCase() };
+}
+
+// حقول قديمة لا تظهر في الاستمارة بعد الآن لكنها تبقى في Firestore ولا تُمسح عند التعديل.
+export const LEGACY_PUBLIC_LOCATION_KEYS = ['governorate', 'city', 'governorateKey', 'cityKey'];
+export const LEGACY_PRIVATE_PATHS = [['owner', 'kind'], ['owner', 'brokerName'], ['owner', 'brokerPhone'], ['owner', 'commission'], ['financial', 'minPrice'], ['financial', 'commissionAgreed'], ['financial', 'commissionPercent'], ['financial', 'commissionValue'], ['financial', 'commissionPayer']];
+
+/** ينسخ الحقول القديمة من المستند الحالي إلى المستند الجديد قبل الكتابة (فلا تُفقد عند تعديل عقار قديم). */
+export function carryLegacyPublic(oldDoc = {}, nextDoc = {}) {
+  const loc = oldDoc.location || {};
+  for (const k of LEGACY_PUBLIC_LOCATION_KEYS) if (loc[k] !== undefined) (nextDoc.location ??= {})[k] = loc[k];
+  return nextDoc;
+}
+export function carryLegacyPrivate(oldPriv = {}, nextPriv = {}) {
+  for (const [a, b] of LEGACY_PRIVATE_PATHS) if (oldPriv?.[a]?.[b] !== undefined) (nextPriv[a] ??= {})[b] = oldPriv[a][b];
+  return nextPriv;
+}
 
 const isLeaf = v => v === null || typeof v !== 'object' || Array.isArray(v) || typeof v.toMillis === 'function';
 export function flatten(o, pre = '', out = {}) {
@@ -83,9 +106,7 @@ export function buildDoc(values) {
     if (f.t === 'n') { v = Number(toLatinDigits(v).replace(/,/g, '')); if (!Number.isFinite(v)) continue; }
     setPath(f.p ? priv : pub, f.k, v);
   }
-  if (pub.location?.city) pub.location.cityKey = normalizeAr(pub.location.city);
   if (pub.location?.district) pub.location.districtKey = normalizeAr(pub.location.district);
-  if (pub.location?.governorate) pub.location.governorateKey = normalizeAr(pub.location.governorate);
   return { pub, priv };
 }
 
@@ -121,7 +142,7 @@ const TX_WORD = { sale: 'للبيع', rent_new: 'للإيجار', rent_old: 'ل�
 
 /** نص المشاركة: يقرأ من المستند العام فقط، فلا يمكن أن يتسرب منه المالك أو العمولة. */
 export function shareText(p) {
-  const where = [p.location?.district, p.location?.city].filter(Boolean).join('، ');
+  const where = [p.location?.district, p.location?.street && `شارع ${p.location.street}`].filter(Boolean).join('، ');
   const head = `${PROPERTY_TYPES[p.propertyType] || 'عقار'} ${TX_WORD[p.transactionType] || ''}${where ? ' في ' + where : ''}`.replace(/\s+/g, ' ').trim();
   const L = [];
   if (p.area != null) L.push(`المساحة: ${fmtNumber(p.area)} متر.`);

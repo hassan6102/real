@@ -11,9 +11,11 @@
 <body class="booting" >
 <main id="page-content" hidden>
 <h1 class="page-title mb-3" id="title">إضافة عقار</h1>
-<form id="form" novalidate><div class="accordion" id="groups"></div>
+<div id="parseBox"></div>
+<form id="form" novalidate><div id="offerBox"></div><div class="accordion" id="groups"></div>
 <div class="sticky-save"><button class="btn btn-navy" id="save">حفظ العقار</button><button type="button" class="btn btn-outline-secondary" id="more">إظهار التفاصيل الإضافية</button><a class="btn btn-link" href="properties.html" onclick="return !window.__dirty||confirm(&quot;توجد تعديلات غير محفوظة. هل تريد المغادرة؟&quot;)">إلغاء</a></div></form>
 </main>
+<div class="modal fade" id="dupModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h2 class="modal-title h5">عقارات محتمل أنها مكررة</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button></div><div class="modal-body" id="dupBody"></div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary" id="dupBack">رجوع للتعديل</button><button type="button" class="btn btn-navy" id="dupIndependent">متابعة كعقار مستقل</button></div></div></div></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script type="module" src="../js/property-form.js"></script>
 </body>

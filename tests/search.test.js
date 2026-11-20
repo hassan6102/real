@@ -2,10 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { cleanFilters, serverPlan, clientMatch, collect, describeFilters } from '../js/search-model.js';
 
-const P = (o = {}) => ({ propertyType: 'apartment', transactionType: 'sale', status: 'available', isArchived: false, location: { city: 'الخانكة', cityKey: 'الخانكه', district: 'الحي الأول' }, price: 950000, area: 120, rooms: 3, bathrooms: 2, floor: 3, facilities: { gas: 'yes', elevator: 'yes' }, ...o });
+const P = (o = {}) => ({ propertyType: 'apartment', transactionType: 'sale', status: 'available', isArchived: false, location: { district: 'الحي الأول' }, price: 950000, area: 120, rooms: 3, bathrooms: 2, floor: 3, facilities: { gas: 'yes', elevator: 'yes' }, ...o });
 
 test('مثال الشقة من المواصفات يطابق', () => {
-  const f = cleanFilters({ tx: ['sale'], types: ['apartment'], city: 'الخانكة', priceMin: '700,000', priceMax: '1000000', areaMin: '100', areaMax: '140', rooms: ['3'], bathrooms: ['2'], facilities: ['gas', 'elevator'] });
+  const f = cleanFilters({ tx: ['sale'], types: ['apartment'], districts: 'الحي الأول', priceMin: '700,000', priceMax: '1000000', areaMin: '100', areaMax: '140', rooms: ['3'], bathrooms: ['2'], facilities: ['gas', 'elevator'] });
   assert.ok(clientMatch(P(), f));
   assert.ok(!clientMatch(P({ rooms: 2 }), f)); assert.ok(!clientMatch(P({ price: 1200000 }), f));
   assert.ok(!clientMatch(P({ facilities: { gas: 'unknown', elevator: 'yes' } }), f));
@@ -23,9 +23,9 @@ test('المؤرشف لا يظهر افتراضيًا ويظهر بفلتر ال
   assert.ok(clientMatch(P({ status: 'sold', isArchived: true }), { status: 'sold' }));
 });
 test('خطة الخادم: نطاق واحد فقط حسب الترتيب', () => {
-  const f = cleanFilters({ tx: ['sale'], city: 'الخانكة', priceMin: '7', priceMax: '9', areaMin: '100' });
+  const f = cleanFilters({ tx: ['sale'], priceMin: '7', priceMax: '9', areaMin: '100' });
   const a = serverPlan(f, 'price_asc');
-  assert.deepEqual(a.conds, [['isArchived', '==', false], ['transactionType', '==', 'sale'], ['location.cityKey', '==', 'الخانكه'], ['price', '>=', 7], ['price', '<=', 9]]);
+  assert.deepEqual(a.conds, [['isArchived', '==', false], ['transactionType', '==', 'sale'], ['price', '>=', 7], ['price', '<=', 9]]);
   assert.deepEqual(a.clientKeys, ['areaMin']); assert.ok(!a.exactCount);
   const b = serverPlan(f, 'area_desc');
   assert.ok(b.conds.some(c => c[0] === 'area') && !b.conds.some(c => c[0] === 'price') && b.clientKeys.includes('priceMin'));

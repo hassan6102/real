@@ -10,6 +10,16 @@ service cloud.firestore {
     function can(p)    { return isAdmin() || (active() && uDoc().data.get('permissions', {}).get(p, false) == true); }
     function isNow(f)  { return request.resource.data[f] == request.time; }
 
+    // ---- أكواد العقارات الرقمية: عداد واحد لا يزيد إلا بواحد، وكود العقار مربوط به داخل نفس المعاملة ----
+    function counterPath() { return /databases/$(database)/documents/settings/counters; }
+    function noBefore()    { return exists(counterPath()) ? get(counterPath()).data.get('propertyNo', 1000) : 1000; }
+    function noAfter()     { return getAfter(counterPath()).data.propertyNo; }
+    function codeLocked()  { return request.resource.data.get('propertyNo', null) == resource.data.get('propertyNo', null)
+                                 && request.resource.data.get('code', null) == resource.data.get('code', null); }
+    function validPrice()  { return !('price' in request.resource.data) || request.resource.data.price == null || request.resource.data.price is number; }
+    function offerStatusOk() { return request.resource.data.status in ['active', 'unavailable', 'expired']
+                                   && request.resource.data.sourceKind in ['broker', 'owner']; }
+
     // الأعضاء: لا أحد يعدّل دوره/صلاحياته/حالته بنفسه، ولا يعدّل أدمن أدمن آخر.
     match /users/{uid} {
       allow get: if active() && (request.auth.uid == uid || isAdmin());
@@ -32,19 +42,59 @@ service cloud.firestore {
         && request.resource.data.createdBy == request.auth.uid && isNow('createdAt')
         && request.resource.data.status in ['available','reserved','sold','rented','suspended','unavailable']
         && request.resource.data.transactionType in ['sale','rent_new','rent_old']
-        && (!('price' in request.resource.data) || request.resource.data.price == null || request.resource.data.price is number)
-        && (!('area' in request.resource.data) || request.resource.data.area == null || request.resource.data.area is number);
-      allow update: if active()
-        && request.resource.data.createdBy == resource.data.createdBy
-        && request.resource.data.updatedBy == request.auth.uid && isNow('updatedAt')
-        && request.resource.data.status in ['available','reserved','sold','rented','suspended','unavailable'];
+        && validPrice()
+        && (!('area' in request.resource.data) || request.resource.data.area == null || request.resource.data.area is number)
+        // الكود: رقمي، يساوي قيمة العداد بعد المعاملة، والعداد زاد بواحد فقط في نفس المعاملة.
+        && request.resource.data.propertyNo is int
+        && request.resource.data.propertyNo == noAfter() && noAfter() == noBefore() + 1
+        && request.resource.data.code is string && request.resource.data.code.matches('^[0-9]+$');
+      allow update: if active() && (
+        // (1) تعديل عام (الاستمارة/الحالة): الكود ثابت دائمًا.
+        ( request.resource.data.createdBy == resource.data.createdBy
+          && request.resource.data.updatedBy == request.auth.uid && isNow('updatedAt')
+          && request.resource.data.status in ['available','reserved','sold','rented','suspended','unavailable']
+          && codeLocked() )
+        // (2) ملخص العروض فقط (السعر الأدنى وعدد العروض) دون المساس ببقية الحقول.
+        || ( request.resource.data.diff(resource.data).affectedKeys().hasOnly(['price','offersSummary','offersUpdatedAt','offersUpdatedBy'])
+          && request.resource.data.offersUpdatedBy == request.auth.uid && isNow('offersUpdatedAt') && validPrice() )
+        // (3) ترحيل المدير: وسم الترحيل وإسناد كود رقمي لعقار قديم لا كود رقميًا له (مرة واحدة فقط).
+        || ( isAdmin()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['propertyNo','offersMigrated','offersMigratedAt','offersMigrationNote'])
+          && ( codeLocked()
+            || ( !('propertyNo' in resource.data) && request.resource.data.propertyNo is int
+                 && request.resource.data.propertyNo == noAfter() && noAfter() == noBefore() + 1 ) ) )
+      );
       allow delete: if isAdmin();
 
-      // بيانات المالك والعمولة وأقل سعر والمديونيات (وثيقة منفصلة بصلاحية مستقلة).
+      // بيانات المالك وأقل سعر والمديونيات (وثيقة منفصلة بصلاحية مستقلة).
       match /private/{docId} {
-        allow create: if active();
+        allow create: if active() && (can('canViewOwnerData') || getAfter(/databases/$(database)/documents/properties/$(id)).data.createdBy == request.auth.uid);
         allow read, update: if can('canViewOwnerData');
         allow delete: if isAdmin();
+      }
+
+      // عروض السماسرة: العام (السعر والحالة) يقرؤه كل الفريق، والخاص (الهاتف والعمولة والملاحظات) بصلاحية canViewOwnerData.
+      // لا قيد على تفرد رقم الهاتف: الرقم موجود فقط في المستند الخاص كبيانات.
+      match /offers/{oid} {
+        allow read: if active();
+        allow create: if active()
+          && request.resource.data.createdBy == request.auth.uid && isNow('createdAt')
+          && request.resource.data.propertyId == id
+          && offerStatusOk() && validPrice()
+          && existsAfter(/databases/$(database)/documents/properties/$(id));
+        allow update: if active()
+          && request.resource.data.createdBy == resource.data.createdBy
+          && request.resource.data.propertyId == resource.data.propertyId
+          && request.resource.data.updatedBy == request.auth.uid && isNow('updatedAt')
+          && offerStatusOk() && validPrice();
+        allow delete: if isAdmin();
+
+        match /private/{docId} {
+          allow create: if active() && (can('canViewOwnerData')
+                          || getAfter(/databases/$(database)/documents/properties/$(id)/offers/$(oid)).data.createdBy == request.auth.uid);
+          allow read, update: if can('canViewOwnerData');
+          allow delete: if isAdmin();
+        }
       }
     }
 
@@ -82,9 +132,27 @@ service cloud.firestore {
       allow read, update, delete: if active() && resource.data.userId == request.auth.uid;
     }
 
+    // عداد الأكواد: لأي عضو نشط أن يزيد مفتاحًا واحدًا بمقدار واحد فقط (لا إنقاص ولا إعادة ضبط ولا قفز).
+    function counterStepOk() {
+      let d = request.resource.data.diff(resource.data).affectedKeys();
+      return d.size() == 1 && (
+           (d.hasOnly(['propertyNo']) && request.resource.data.propertyNo == resource.data.get('propertyNo', 1000) + 1)
+        || (d.hasOnly(['customer'])   && request.resource.data.customer   == resource.data.get('customer', 0) + 1)
+        || (d.hasOnly(['request'])    && request.resource.data.request    == resource.data.get('request', 0) + 1));
+    }
     match /settings/{id} {
       allow read: if active();
-      allow write: if isAdmin() || (id == 'counters' && active());
+      allow create: if (id != 'counters' && isAdmin())
+        || (id == 'counters' && active() && request.resource.data.keys().size() == 1
+            && (request.resource.data.get('propertyNo', 0) == 1001 || request.resource.data.get('customer', 0) == 1 || request.resource.data.get('request', 0) == 1));
+      allow update: if (id != 'counters' && isAdmin()) || (id == 'counters' && active() && counterStepOk());
+      allow delete: if false;
     }
+
+    // تقرير ترحيل العروض: للمدير فقط.
+    match /migrations/{id} { allow read, write: if isAdmin(); }
+
+    // استعلام المدير عن ارتباط عقار بالمفضلة قبل حذفه (المفضلة الخاصة تبقى لأصحابها بقاعدتها الأصلية).
+    match /{path=**}/favorites/{pid} { allow read: if isAdmin(); }
   }
 }

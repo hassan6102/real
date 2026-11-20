@@ -58,6 +58,8 @@ const ACTION_VERBS = {
   property_create: 'أضاف عقارًا', property_delete: 'حذف عقارًا نهائيًا', property_update: 'عدّل عقارًا', price_change: 'عدّل سعر عقار',
   status_change: 'غيّر حالة عقار', property_archive: 'أرشف عقارًا',
   customer_create: 'أضاف عميلًا', customer_update: 'عدّل بيانات عميل',
-  request_create: 'أضاف طلب عميل', request_update: 'عدّل طلب عميل'
+  request_create: 'أضاف طلب عميل', request_update: 'عدّل طلب عميل',
+  offer_create: 'أضاف عرض سمسار على عقار', offer_update: 'عدّل عرض سمسار على عقار', offer_status: 'غيّر حالة عرض سمسار على عقار',
+  offer_delete: 'حذف عرض سمسار من عقار', migration_run: 'شغّل ترحيل العروض'
 };
 export const actionText = a => ACTION_VERBS[a] || 'نفّذ عملية';

@@ -117,7 +117,6 @@ function renderBasicInfo() {
     ['تصنيف العميل', CUSTOMER_TYPES[customer.customerType] || '—'],
     ['حالة العميل', CUSTOMER_STATUSES[customer.status] || '—'],
     ['مصدر العميل', CUSTOMER_SOURCES[customer.source] || '—'],
-    ['المدينة / المنطقة', escapeHtml(customer.city || '—')],
     ['إجمالي مرات التواصل', `${contacts.length} تواصل`],
     ['الطلبات العقارية', `${requests.length} طلب (${activeReqs} نشط)`],
     ['آخر تواصل مسجل', customer.lastContactAt ? `${fmtDateTime(customer.lastContactAt)} (${CONTACT_TYPES[customer.lastContactType] || ''})` : 'لا يوجد بعد']
@@ -246,7 +245,7 @@ function renderRequests() {
             <div class="row g-2 small mb-2">
               <div class="col-6 col-sm-4">
                 <span class="text-muted d-block">الموقع المطلوب:</span>
-                <strong>${escapeHtml([r.city, r.districts].filter(Boolean).join(' - ') || 'غير محدد')}</strong>
+                <strong>${escapeHtml(r.districts || 'غير محدد')}</strong>
               </div>
               <div class="col-6 col-sm-4">
                 <span class="text-muted d-block">الميزانية:</span>
@@ -431,7 +430,6 @@ $('contactsList').addEventListener('click', async e => {
 $('openReqModalBtn').addEventListener('click', () => {
   $('requestForm').reset();
   document.querySelectorAll('#requestForm .is-invalid').forEach(el => el.classList.remove('is-invalid'));
-  if (customer?.city) $('r_city').value = customer.city;
   reqModal.show();
 });
 
@@ -446,7 +444,6 @@ $('saveReqBtn').addEventListener('click', async () => {
     transactionType: $('r_tx').value,
     propertyType: $('r_type').value,
     status: $('r_status').value,
-    city: $('r_city').value,
     districts: $('r_districts').value,
     budgetMin: $('r_budgetMin').value,
     budgetMax: $('r_budgetMax').value,

@@ -36,7 +36,7 @@ function matches(r) {
 
   const qAr = normalizeAr(q);
   const qDigits = toLatinDigits(q).replace(/\D/g, '');
-  const text = normalizeAr([r.code, r.customerName, r.city, r.districts, r.notes].filter(Boolean).join(' '));
+  const text = normalizeAr([r.code, r.customerName, r.districts, r.notes].filter(Boolean).join(' '));
   if (text.includes(qAr)) return true;
   if (qDigits && String(r.customerPhone || '').includes(qDigits)) return true;
   return false;
@@ -62,7 +62,7 @@ function render() {
               </select>
             </div>
             <div class="small mb-2">
-              <div><span class="text-muted">الموقع:</span> <strong>${escapeHtml([r.city, r.districts].filter(Boolean).join(' - ') || 'غير محدد')}</strong></div>
+              <div><span class="text-muted">الموقع:</span> <strong>${escapeHtml(r.districts || 'غير محدد')}</strong></div>
               <div><span class="text-muted">الميزانية:</span> <strong>${formatRange(r.budgetMin, r.budgetMax, 'جنيه')}</strong></div>
               <div><span class="text-muted">المساحة:</span> <strong>${formatRange(r.areaMin, r.areaMax, 'م²')}</strong></div>
               <div><span class="text-muted">الدفع:</span> ${PAYMENT_METHODS[r.paymentMethod] || 'كاش'} ${r.roomsMin != null ? `· ${r.roomsMin}+ غرف` : ''}</div>

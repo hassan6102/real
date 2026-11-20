@@ -575,7 +575,44 @@
      "order": "ASCENDING"
     }
    ]
+  },
+  {
+   "collectionGroup": "properties",
+   "queryScope": "COLLECTION",
+   "fields": [
+    {
+     "fieldPath": "isArchived",
+     "order": "ASCENDING"
+    },
+    {
+     "fieldPath": "transactionType",
+     "order": "ASCENDING"
+    },
+    {
+     "fieldPath": "propertyType",
+     "order": "ASCENDING"
+    },
+    {
+     "fieldPath": "createdAt",
+     "order": "DESCENDING"
+    }
+   ]
   }
  ],
- "fieldOverrides": []
+ "fieldOverrides": [
+  {
+   "collectionGroup": "favorites",
+   "fieldPath": "propertyId",
+   "indexes": [
+    {
+     "order": "ASCENDING",
+     "queryScope": "COLLECTION"
+    },
+    {
+     "order": "ASCENDING",
+     "queryScope": "COLLECTION_GROUP"
+    }
+   ]
+  }
+ ]
 }

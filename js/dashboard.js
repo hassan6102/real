@@ -51,8 +51,8 @@ function watchRecent() {
     const box = document.getElementById('recent');
     box.innerHTML = snap.empty ? empty('buildings', 'لم تُسجَّل عقارات بعد. أضف أول عقار ليظهر لجميع الفريق.')
       : snap.docs.map(d => { const p = d.data(); return `<li><a href="pages/property-details.html?id=${d.id}" class="d-block text-reset text-decoration-none">
-          <div><strong>${escapeHtml(p.code || '')}</strong> ${PROPERTY_TYPES[p.propertyType] || ''} ${TRANSACTION_TYPES[p.transactionType] ? '- ' + TRANSACTION_TYPES[p.transactionType] : ''}</div>
-          <small>${escapeHtml(p.location?.district || p.location?.city || '')} ${p.price != null ? '· ' + fmtNumber(p.price) + ' جنيه' : ''} · ${STATUSES[p.status] || ''}</small></a></li>`; }).join('');
+          <div><strong>${escapeHtml(p.propertyNo != null ? String(p.propertyNo) : (p.code || ''))}</strong> ${PROPERTY_TYPES[p.propertyType] || ''} ${TRANSACTION_TYPES[p.transactionType] ? '- ' + TRANSACTION_TYPES[p.transactionType] : ''}</div>
+          <small>${escapeHtml(p.location?.district || p.location?.street || '')} ${p.price != null ? '· ' + fmtNumber(p.price) + ' جنيه' : ''} · ${STATUSES[p.status] || ''}</small></a></li>`; }).join('');
   }, e => { console.error(e); document.getElementById('recent').innerHTML = empty('exclamation-triangle', 'تعذّر تحميل العقارات.'); });
 }
 

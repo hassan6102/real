@@ -1,8 +1,9 @@
 import { guard, toast } from './layout.js';
 import { PROPERTY_TYPES, TRANSACTION_TYPES, STATUSES, escapeHtml, fmtNumber } from './utils.js';
 import { FINISHING } from './property-model.js';
-import { SORTS, FACILITIES, FLOOR_FLAGS, cleanFilters, serverPlan, clientMatch, collect, describeFilters } from './search-model.js';
+import { SORTS, FACILITIES, FLOOR_FLAGS, cleanFilters, serverPlan, clientMatch, collect, describeFilters, nearPlan, rankNear, scoreSearch, EXACT_ENOUGH } from './search-model.js';
 import { pageFetcher, exactCount, saveSearch, listSaved, deleteSaved } from './services/search.js';
+import { findByCode } from './services/properties.js';
 import { cardHtml, bindCardActions } from './property-card.js';
 import { attachFavorites } from './favorites-ui.js';
 
@@ -19,7 +20,8 @@ const two = (a, b) => `<div class="row g-2"><div class="col">${a}</div><div clas
 
 $('fields').innerHTML = [
   sec('نوع العملية والعقار', chips('tx', TRANSACTION_TYPES) + chips('types', PROPERTY_TYPES)),
-  sec('الموقع', two(txt('governorate', 'المحافظة'), txt('city', 'المدينة (تطابق كامل)')) + `<div class="mt-2">${txt('districts', 'المناطق (افصل بفاصلة)')}</div><div class="mt-2">${txt('street', 'الشارع')}</div>`),
+  sec('بحث بكود العقار', txt('codeq', 'اكتب كود العقار (مثال: 1025) ثم ابحث') + '<small class="text-muted">يتجاهل بقية الفلاتر.</small>'),
+  sec('الموقع', `${txt('districts', 'المناطق (افصل بفاصلة)')}<div class="mt-2">${txt('street', 'الشارع')}</div>`),
   sec('السعر والمساحة', two(num('priceMin', 'السعر من'), num('priceMax', 'السعر إلى')) + `<div class="mt-2">${two(num('areaMin', 'المساحة من'), num('areaMax', 'المساحة إلى'))}</div>`),
   sec('الدور', two(num('floorMin', 'الدور من'), num('floorMax', 'الدور إلى')) + chips('floorFlags', FLOOR_FLAGS)),
   sec('الغرف والحمامات والريسبشن', `<small>الغرف</small>${chips('rooms', cnt)}<small>الحمامات</small>${chips('bathrooms', cnt)}<small>الريسبشن</small>${chips('receptions', cnt)}`),
@@ -35,18 +37,36 @@ if (innerWidth >= 992) $('filters').classList.add('show');
 const raw = () => { const r = {}; for (const e of form.elements) { if (!e.name) continue; if (e.type === 'checkbox') { if (e.checked) (r[e.name] ??= []).push(e.value); } else r[e.name] = e.value; } return r; };
 const fill = f => { for (const e of form.elements) { if (!e.name) continue; const v = f[e.name]; if (e.type === 'checkbox') e.checked = Array.isArray(v) && v.includes(e.value); else e.value = v ?? ''; } };
 
-let filters = {}, plan = null, state = null, byId = {}, running = false, seq = 0;
+let filters = {}, plan = null, state = null, byId = {}, running = false, seq = 0, nearSeq = 0;
+const nearBox = document.createElement('div'); nearBox.id = 'near'; $('list').after(nearBox);
 
 function renderChips() {
   const d = describeFilters(filters);
   $('active').innerHTML = d.map((c, i) => `<button type="button" class="btn btn-sm btn-outline-secondary" data-i="${i}">${escapeHtml(c.label)} <i class="bi bi-x"></i></button>`).join('');
   $('active').onclick = e => { const b = e.target.closest('[data-i]'); if (!b) return; d[b.dataset.i].keys.forEach(k => delete filters[k]); fill(filters); run(); };
 }
+/** بدائل أقرب: عند قلة المطابقات التامة نعرض أقرب العقارات المتاحة بنسبة تشابه وسبب كل اختلاف. */
+async function loadNear() {
+  const my = ++nearSeq; nearBox.innerHTML = '';
+  const exactIds = new Set(state.results.map(d => d.id));
+  if (state.results.length >= EXACT_ENOUGH) return;
+  let docs;
+  try { docs = (await pageFetcher(nearPlan(filters))(null, 300)).docs; } catch (e) { console.error(e); return; }
+  if (my !== nearSeq) return;
+  const items = docs.map(d => ({ id: d.id, ...d.data() })), docById = Object.fromEntries(docs.map(d => [d.id, d]));
+  const near = rankNear(filters, items, { skipIds: exactIds });
+  near.forEach(m => (byId[m.item.id] = m.item));
+  if (!near.length) { nearBox.innerHTML = state.results.length ? '' : '<div class="empty w-100"><i class="bi bi-search"></i><p>لا توجد عقارات مطابقة ولا قريبة من المواصفات. جرّب تخفيف بعض الفلاتر.</p></div>'; return; }
+  nearBox.innerHTML = `<h2 class="h5 mt-4">${state.results.length ? 'عقارات قريبة أخرى' : (state.exhausted ? 'لا توجد مطابقة تامة، وهذه أقرب العقارات للمواصفات' : 'لا توجد مطابقة تامة حتى الآن، وهذه أقرب العقارات للمواصفات')}</h2>
+    <p class="small text-muted">النسب تقديرية وليست ضمانًا بتطابق العقار مع الطلب. تظهر العقارات المتاحة فقط، ولا تخلط البيع بالإيجار ولا أنواع العقارات.</p>
+    <div class="row g-3" id="nearList">${near.map(m => cardHtml(docById[m.item.id], m)).join('')}</div>`;
+}
 function renderResults(total) {
   const r = state.results; r.forEach(d => (byId[d.id] = d.data()));
   $('count').textContent = r.length || state.exhausted ? (total != null ? `تم العثور على ${fmtNumber(total)} عقارًا مطابقًا.` : state.exhausted ? `تم العثور على ${r.length} عقارًا مطابقًا.` : `تم العثور على ${r.length} عقارًا حتى الآن.`) : '';
   $('list').innerHTML = r.length ? r.map(cardHtml).join('') : state.exhausted ? '<div class="empty w-100"><i class="bi bi-search"></i><p>لا توجد عقارات مطابقة. جرّب تخفيف بعض الفلاتر.</p></div>' : '';
   $('more').hidden = state.exhausted;
+  loadNear();
   $('note').textContent = !state.exhausted ? `تم فحص ${state.scanned} عقارًا${r.length ? '' : ' دون نتائج مطابقة'}. اضغط "متابعة البحث" لفحص المزيد.` : '';
 }
 async function step(first) {
@@ -61,7 +81,17 @@ async function step(first) {
   } catch (e) { console.error(e); $('list').innerHTML = '<div class="alert alert-danger w-100">تعذّر البحث. إن كانت هذه أول مرة، انشر الفهارس ثم أعد المحاولة (راجع README).</div>'; }
   finally { running = false; $('go').disabled = $('more').disabled = false; $('spin').hidden = true; }
 }
+async function runCode(q) {
+  seq++; nearSeq++; nearBox.innerHTML = ''; $('more').hidden = true; $('note').textContent = ''; $('active').innerHTML = '';
+  try {
+    const found = await findByCode(q); found.forEach(p => (byId[p.id] = p));
+    $('count').textContent = found.length ? `نتيجة الكود ${q}:` : '';
+    $('list').innerHTML = found.length ? found.map(p => cardHtml({ id: p.id, data: () => p })).join('') : '<div class="empty w-100"><i class="bi bi-hash"></i><p>لا يوجد عقار بهذا الكود.</p></div>';
+  } catch (e) { console.error(e); $('list').innerHTML = '<div class="alert alert-danger w-100">تعذّر البحث بالكود.</div>'; }
+}
 function run() {
+  const code = (raw().codeq || '').trim();
+  if (code) return runCode(code);
   filters = cleanFilters(raw()); plan = serverPlan(filters, $('sort').value); seq++; running = false;
   renderChips(); step(true);
 }

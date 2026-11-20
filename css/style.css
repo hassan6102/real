@@ -71,3 +71,9 @@ body.booting{visibility:hidden}
 .pick:hover{border-color:var(--gold)}.pick.sel{border-color:var(--navy);box-shadow:inset -3px 0 0 var(--gold)}
 .pick-list{max-height:70vh;overflow-y:auto}
 .reason-ok{color:var(--green)}.reason-partial{color:#a37f3c}.reason-miss{color:#b42318}
+
+/* إدخال من وصف جاهز: تمييز الحقول المعبّأة تلقائيًا */
+.from-parse { background-color: #fff8e1 !important; border-color: #f0c36d !important; }
+.dup-card { border: 1px solid var(--bs-border-color); border-radius: .5rem; padding: .75rem; margin-bottom: .75rem; }
+.offer-card { border: 1px solid var(--bs-border-color); border-radius: .5rem; padding: .75rem; }
+.offer-card.inactive { opacity: .65; background: #f8f9fa; }

@@ -150,7 +150,6 @@ export function validateCustomerInput(raw = {}) {
   const customerType = raw.customerType && CUSTOMER_TYPES[raw.customerType] ? raw.customerType : 'buyer';
   const status = raw.status && CUSTOMER_STATUSES[raw.status] ? raw.status : 'active';
   const source = raw.source && CUSTOMER_SOURCES[raw.source] ? raw.source : '';
-  const city = String(raw.city ?? '').trim();
   const notes = String(raw.notes ?? '').trim();
 
   const data = {
@@ -163,7 +162,6 @@ export function validateCustomerInput(raw = {}) {
     ...(phone2 && { phone2 }),
     ...(whatsapp && { whatsapp }),
     ...(source && { source }),
-    ...(city && { city, cityKey: normalizeAr(city) }),
     ...(notes && { notes })
   };
 
@@ -285,6 +283,8 @@ export async function updateCustomer(user, customerId, oldCustomer, rawInput) {
   const nextDoc = {
     ...data,
     code: oldCustomer.code || 'C-000000',
+    // المدينة حقل قديم أُزيل من الواجهة: يُحفظ كما هو ولا يُمسح عند التعديل.
+    ...(oldCustomer.city && { city: oldCustomer.city, cityKey: oldCustomer.cityKey || '' }),
     createdBy: oldCustomer.createdBy || user.uid,
     createdByName: oldCustomer.createdByName || user.name || '',
     createdAt: oldCustomer.createdAt || serverTimestamp(),
@@ -362,7 +362,6 @@ export function matchCustomerSearch(c, searchQuery = '', typeFilter = '', status
   const haystack = [
     c.name,
     c.code,
-    c.city,
     c.notes,
     CUSTOMER_TYPES[c.customerType],
     CUSTOMER_SOURCES[c.source]
@@ -478,7 +477,6 @@ export function validateRequestInput(raw = {}) {
   if (Number.isNaN(bathroomsMin)) errors.bathroomsMin = 'أدخل رقمًا صحيحًا.';
 
   const status = raw.status && REQUEST_STATUSES[raw.status] ? raw.status : 'new';
-  const city = String(raw.city ?? '').trim();
   const districts = String(raw.districts ?? '').trim();
   const finishing = String(raw.finishing ?? '').trim();
   const floorPref = raw.floorPref && FLOOR_PREFS[raw.floorPref] ? raw.floorPref : 'any';
@@ -493,7 +491,6 @@ export function validateRequestInput(raw = {}) {
     floorPref,
     paymentMethod,
     priority,
-    ...(city && { city, cityKey: normalizeAr(city) }),
     ...(districts && { districts }),
     ...(budgetMin != null && !Number.isNaN(budgetMin) && { budgetMin }),
     ...(budgetMax != null && !Number.isNaN(budgetMax) && { budgetMax }),

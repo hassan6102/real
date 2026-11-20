@@ -16,6 +16,7 @@ const NAV = [
   { label: 'طلبات العملاء', icon: 'card-checklist', href: 'pages/requests.html', ready: true },
   { label: 'مطابقة العقارات', icon: 'diagram-3', href: 'pages/matching.html', ready: true },
   { label: 'المفضلة', icon: 'star', href: 'pages/favorites.html', ready: true },
+  { label: 'ترحيل العروض', icon: 'arrow-repeat', href: 'pages/migration.html', ready: true, admin: true },
   { label: 'التقارير', icon: 'bar-chart', href: 'pages/reports.html', phase: 6, perm: 'canViewReports' },
   { label: 'سجل النشاطات', icon: 'clock-history', href: 'pages/activity.html', phase: 6, admin: true },
   { label: 'إدارة الفريق', icon: 'person-gear', href: 'pages/team.html', phase: 6, admin: true },

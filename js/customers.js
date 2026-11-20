@@ -67,7 +67,6 @@ function renderCard(c) {
             <a href="tel:${phone}" class="text-decoration-none fw-semibold text-dark" dir="ltr">${phone}</a>
             ${c.phone2 ? `<span class="text-muted">· ${escapeHtml(c.phone2)}</span>` : ''}
           </div>
-          ${c.city ? `<div class="text-muted"><i class="bi bi-geo-alt ms-1"></i>${escapeHtml(c.city)}</div>` : ''}
           ${c.source ? `<div class="text-muted"><i class="bi bi-megaphone ms-1"></i>المصدر: ${escapeHtml(CUSTOMER_SOURCES[c.source] || c.source)}</div>` : ''}
           ${c.lastContactAt ? `<div class="text-muted"><i class="bi bi-clock-history ms-1"></i>آخر تواصل: ${fmtDateTime(c.lastContactAt)}${c.lastContactType ? ' (' + (CONTACT_TYPES[c.lastContactType] || '') + ')' : ''}</div>` : ''}
         </div>
@@ -117,7 +116,7 @@ function renderTable(items) {
             </td>
             <td>${CUSTOMER_TYPES[c.customerType] || '—'}</td>
             <td><span class="badge ${statusBadgeClass(c.status)}">${CUSTOMER_STATUSES[c.status] || 'نشط'}</span></td>
-            <td class="small text-muted">${escapeHtml([c.city, CUSTOMER_SOURCES[c.source]].filter(Boolean).join(' · ') || '—')}</td>
+            <td class="small text-muted">${escapeHtml([CUSTOMER_SOURCES[c.source]].filter(Boolean).join(' · ') || '—')}</td>
             <td class="small text-muted">${c.lastContactAt ? fmtDateTime(c.lastContactAt) : 'لا يوجد'}</td>
             <td>
               <div class="d-flex flex-wrap gap-1">

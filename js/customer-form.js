@@ -40,7 +40,6 @@ if (customerId) {
       $('customerType').value = oldCustomer.customerType || 'buyer';
       $('status').value = oldCustomer.status || 'active';
       $('source').value = oldCustomer.source || '';
-      $('city').value = oldCustomer.city || '';
       $('notes').value = oldCustomer.notes || '';
     }
   } catch (err) {
@@ -105,7 +104,6 @@ $('customerForm').addEventListener('submit', async e => {
     customerType: $('customerType').value,
     status: $('status').value,
     source: $('source').value,
-    city: $('city').value,
     notes: $('notes').value
   };
 

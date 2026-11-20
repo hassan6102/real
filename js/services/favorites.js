@@ -1,4 +1,5 @@
 // المفضلة: users/{uid}/favorites/{propertyId}. معرّف المستند = معرّف العقار فيستحيل تكراره.
+import { displayCode } from '../property-model.js';
 import { db, doc, collection, getDoc, getDocs, setDoc, deleteDoc, onSnapshot, query, orderBy, limit, serverTimestamp } from '../firebase-config.js';
 
 const favCol = uid => collection(db, 'users', uid, 'favorites');
@@ -7,7 +8,7 @@ const favRef = (uid, pid) => doc(db, 'users', uid, 'favorites', pid);
 /** يضيف العقار إن لم يكن موجودًا (لا يعيد الكتابة فيحفظ تاريخ الإضافة الأصلي). */
 export async function addFavorite(user, property) {
   if ((await getDoc(favRef(user.uid, property.id))).exists()) return false;
-  await setDoc(favRef(user.uid, property.id), { propertyId: property.id, code: property.code || '', addedAt: serverTimestamp() });
+  await setDoc(favRef(user.uid, property.id), { propertyId: property.id, code: displayCode(property), addedAt: serverTimestamp() });
   return true;
 }
 export const removeFavorite = (user, propertyId) => deleteDoc(favRef(user.uid, propertyId));

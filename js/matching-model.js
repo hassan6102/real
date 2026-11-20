@@ -44,19 +44,18 @@ export const LEVEL_LABELS = { high: 'توافق عالٍ', medium: 'توافق �
 
 /**
  * يحسب توافق عقار مع طلب. يعيد null عند الاستبعاد الحتمي:
- * طلب غير نشط، عقار غير متاح، اختلاف نوع المعاملة أو نوع العقار، أو اختلاف المدينة.
+ * طلب غير نشط، عقار غير متاح (أو بلا عرض نشط)، أو اختلاف نوع المعاملة أو نوع العقار.
+ * المكتب يعمل في مدينة واحدة، فلا دور للمحافظة/المدينة هنا؛ الموقع = المنطقة فقط.
  */
 export function scorePair(req, prop) {
   if (!req || !prop) return null;
   if (!ACTIVE_STATUSES.includes(req.status)) return null;
   if (prop.status !== 'available') return null;
+  if (prop.offersSummary && prop.offersSummary.activeCount === 0) return null;
   if (req.transactionType !== prop.transactionType) return null;
   if (req.propertyType !== prop.propertyType) return null;
 
   const loc = prop.location || {};
-  const propCity = loc.cityKey || normalizeAr(loc.city || '');
-  const reqCity = req.cityKey || normalizeAr(req.city || '');
-  if (reqCity && propCity && reqCity !== propCity) return null;
 
   const reasons = [];
   let earned = 0, possible = 0;
@@ -65,24 +64,22 @@ export function scorePair(req, prop) {
     reasons.push({ key, label, ratio, text, missing: !!missing, state: ratio >= 0.999 ? 'ok' : ratio > 0 ? 'partial' : 'miss' });
   };
 
-  // المنطقة
+  // المنطقة (إن ذُكرت مناطق في الطلب). المنطقة غير المسجلة في العقار تُحسب بصفر مع توضيح السبب (كبقية المعايير في هذا الملف).
   const reqDistricts = splitDistricts(req.districts);
-  if (reqCity || reqDistricts.length) {
+  if (reqDistricts.length) {
     const propDistrict = loc.districtKey || normalizeAr(loc.district || '');
-    let ratio, text;
-    if (reqDistricts.length) {
+    if (!propDistrict) add('location', 'المنطقة', WEIGHTS.location, 0, 'منطقة العقار غير مسجلة', true);
+    else {
       const hit = districtHit(reqDistricts, propDistrict);
-      ratio = reqCity ? (hit ? 1 : 0.4) : (hit ? 1 : 0); // المدينة المطابقة وحدها تعطي 40%
-      text = hit ? `المنطقة مطابقة (${loc.district || loc.city})` : reqCity ? `نفس المدينة لكن المنطقة مختلفة (${loc.district || 'غير مسجلة'})` : `المنطقة غير مطابقة (${loc.district || 'غير مسجلة'})`;
-    } else { ratio = 1; text = `نفس المدينة (${loc.city})`; }
-    add('location', 'المنطقة', WEIGHTS.location, ratio, text);
+      add('location', 'المنطقة', WEIGHTS.location, hit ? 1 : 0, hit ? `المنطقة مطابقة (${loc.district})` : `المنطقة غير مطابقة (${loc.district})`);
+    }
   }
 
   // الميزانية
   if (isNum(req.budgetMin) || isNum(req.budgetMax)) {
     const r = budgetRatio(prop.price, req.budgetMin, req.budgetMax);
     add('budget', 'الميزانية', WEIGHTS.budget, r.ratio,
-      r.missing ? 'سعر العقار غير مسجل' : r.over ? (r.ratio > 0 ? 'السعر أعلى من الميزانية بنسبة بسيطة' : 'السعر أعلى من الميزانية') : 'السعر ضمن الميزانية', r.missing);
+      r.missing ? 'سعر العقار غير مسجل' : r.over ? (r.ratio > 0 ? 'السعر أعلى من الميزانية بنسبة بسيطة' : 'السعر أعلى من الميزانية') : (prop.offersSummary?.activeCount > 1 ? 'أقل عرض نشط ضمن الميزانية' : 'السعر ضمن الميزانية'), r.missing);
   }
 
   // المساحة

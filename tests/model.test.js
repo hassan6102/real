@@ -9,17 +9,17 @@ test('الحقول الفارغة لا تُخزَّن ولا تتحول لأصف
 });
 test('الصفر الصريح يُحفظ (الدور الأرضي)', () => assert.equal(buildDoc({ floor: '0' }).pub.floor, 0));
 test('فصل بيانات المالك والعمولة عن المستند العام', () => {
-  const { pub, priv } = buildDoc({ 'owner.name': 'س', 'financial.commissionValue': '5000', 'location.city': 'الخانكة' });
-  assert.equal(priv.owner.name, 'س'); assert.equal(priv.financial.commissionValue, 5000);
-  assert.ok(!pub.owner && !pub.financial); assert.equal(pub.location.cityKey, 'الخانكه');
+  const { pub, priv } = buildDoc({ 'owner.name': 'س', 'financial.debts': 'مديونية', 'location.district': 'الخانكة' });
+  assert.equal(priv.owner.name, 'س'); assert.equal(priv.financial.debts, 'مديونية');
+  assert.ok(!pub.owner && !pub.financial); assert.equal(pub.location.districtKey, 'الخانكه');
 });
 test('التحقق من المطلوب والأرقام', () => {
   const e = validate({ price: 'abc', area: '-5' });
-  assert.ok(e.propertyType && e.transactionType && e['location.city'] && e.price && e.area);
-  assert.deepEqual(validate({ propertyType: 'x', transactionType: 'sale', 'location.governorate': 'ج', 'location.city': 'م', price: '1', area: '1' }), {});
+  assert.ok(e.propertyType && e.transactionType && e.price && e.area);
+  assert.deepEqual(validate({ propertyType: 'x', transactionType: 'sale', price: '1', area: '1' }), {});
 });
 test('نص المشاركة بلا بيانات سرية', () => {
-  const p = { propertyType: 'apartment', transactionType: 'sale', location: { city: 'الخانكة' }, area: 130, floor: 3, rooms: 3, bathrooms: 2, finishing: 'super_lux', facilities: { gas: 'yes', elevator: 'yes' }, price: 950000, owner: { name: 'سري' }, notes: { team: 'سر' } };
+  const p = { propertyType: 'apartment', transactionType: 'sale', location: { district: 'الخانكة' }, area: 130, floor: 3, rooms: 3, bathrooms: 2, finishing: 'super_lux', facilities: { gas: 'yes', elevator: 'yes' }, price: 950000, owner: { name: 'سري' }, notes: { team: 'سر' } };
   const t = shareText(p);
   assert.match(t, /^شقة للبيع في الخانكة/); assert.match(t, /الدور: الثالث/); assert.match(t, /السعر: 950,000 جنيه/);
   assert.doesNotMatch(t, /سري|سر|مالك/);

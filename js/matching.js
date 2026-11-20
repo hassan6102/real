@@ -4,6 +4,8 @@ import { escapeHtml, fmtNumber, normalizeAr, toLatinDigits, PROPERTY_TYPES, TRAN
 import { REQUEST_STATUSES, CONTACT_TYPES, CONTACT_OUTCOMES, addCustomerContact, addRequestFollowUp } from './services/customers.js';
 import { ACTIVE_STATUSES, DEFAULT_MIN_SCORE, LEVEL_LABELS, scorePair, matchRequest, matchProperty } from './matching-model.js';
 import { favButton, attachFavorites } from './favorites-ui.js';
+import { displayCode } from './property-model.js';
+import { priceInfo } from './offers-model.js';
 
 const user = await guard({ base: '../', active: 'pages/matching.html' });
 const $ = id => document.getElementById(id);
@@ -36,32 +38,33 @@ const pill = s => `<span class="score-pill score-${s >= 80 ? 'high' : s >= 60 ? 
 const bar = s => `<div class="score-bar mt-1"><i class="score-${s >= 80 ? 'high' : s >= 60 ? 'medium' : 'low'}" style="width:${s}%"></i></div>`;
 const reasonsHtml = rs => rs.length ? `<ul class="list-unstyled small mb-2">${rs.map(r => `<li class="reason-${r.state}"><i class="bi bi-${r.state === 'ok' ? 'check-circle' : r.state === 'partial' ? 'dash-circle' : 'x-circle'} ms-1"></i><strong>${r.label}:</strong> ${escapeHtml(r.text)}</li>`).join('')}</ul>` : '';
 const empty = (icon, text) => `<div class="empty panel"><i class="bi bi-${icon}"></i><p>${text}</p></div>`;
-const propTitle = p => `${escapeHtml(p.code || '')} · ${PROPERTY_TYPES[p.propertyType] || ''} · ${TRANSACTION_TYPES[p.transactionType] || ''}`;
-const where_ = p => escapeHtml([p.location?.district, p.location?.city].filter(Boolean).join('، '));
+const propTitle = p => `${escapeHtml(displayCode(p))} · ${PROPERTY_TYPES[p.propertyType] || ''} · ${TRANSACTION_TYPES[p.transactionType] || ''}`;
+const where_ = p => escapeHtml([p.location?.district, p.location?.street].filter(Boolean).join('، '));
+const priceTxt = p => { const i = priceInfo(p); return i.text + (i.note ? ` (${i.note})` : ''); };
 
 /* ---------- القوائم اليمنى (الاختيار) ---------- */
 function drawReqList() {
   const q = normalizeAr($('reqSearch').value), qd = toLatinDigits($('reqSearch').value).replace(/\D/g, '');
-  const rows = reqs.filter(r => !q || normalizeAr([r.code, r.customerName, r.city, r.districts].filter(Boolean).join(' ')).includes(q) || (qd && String(r.customerPhone || '').includes(qd)))
+  const rows = reqs.filter(r => !q || normalizeAr([r.code, r.customerName, r.districts].filter(Boolean).join(' ')).includes(q) || (qd && String(r.customerPhone || '').includes(qd)))
     .sort((a, b) => (reqStats.get(b.id)?.best || 0) - (reqStats.get(a.id)?.best || 0));
   $('reqList').innerHTML = !reqsReady ? '<div class="text-muted">جارٍ التحميل...</div> ' : rows.length ? rows.map(r => {
     const st = reqStats.get(r.id);
     return `<button type="button" class="pick ${r.id === selReq ? 'sel' : ''}" data-req="${r.id}">
       <div class="d-flex justify-content-between align-items-start gap-2"><strong>${escapeHtml(r.customerName || '—')}</strong>${st ? pill(st.best) : '<span class="small text-muted">لا نتائج</span>'}</div>
       <div class="small text-muted">${escapeHtml(r.code || '')} · ${PROPERTY_TYPES[r.propertyType] || ''} (${TRANSACTION_TYPES[r.transactionType] || ''})</div>
-      <div class="small">${escapeHtml([r.city, r.districts].filter(Boolean).join(' - ') || 'الموقع غير محدد')}${st ? ` · <span class="text-success">${st.count} عقار مناسب</span>` : ''}</div></button>`;
+      <div class="small">${escapeHtml(r.districts || 'الموقع غير محدد')}${st ? ` · <span class="text-success">${st.count} عقار مناسب</span>` : ''}</div></button>`;
   }).join('') : empty('card-checklist', reqs.length ? 'لا توجد طلبات مطابقة للبحث.' : 'لا توجد طلبات نشطة حاليًا.');
 }
 
 function drawPropList() {
   const q = normalizeAr($('propSearch').value);
-  const rows = props.filter(p => !q || normalizeAr([p.code, p.location?.city, p.location?.district].filter(Boolean).join(' ')).includes(q))
+  const rows = props.filter(p => !q || normalizeAr([p.code, p.propertyNo, p.location?.district, p.location?.street].filter(Boolean).join(' ')).includes(q))
     .sort((a, b) => (propStats.get(b.id)?.best || 0) - (propStats.get(a.id)?.best || 0));
   $('propList').innerHTML = !propsReady ? '<div class="text-muted">جارٍ التحميل...</div> ' : rows.length ? rows.map(p => {
     const st = propStats.get(p.id);
     return `<button type="button" class="pick ${p.id === selProp ? 'sel' : ''}" data-prop="${p.id}">
       <div class="d-flex justify-content-between align-items-start gap-2"><strong>${propTitle(p)}</strong>${st ? pill(st.best) : '<span class="small text-muted">لا اهتمام</span>'}</div>
-      <div class="small text-muted">${where_(p)} ${p.price != null ? '· ' + fmtNumber(p.price) + ' جنيه' : ''}</div>
+      <div class="small text-muted">${where_(p)} ${p.price != null ? '· ' + priceTxt(p) : ''}</div>
       ${st ? `<div class="small text-success">${st.count} عميل محتمل</div>` : ''}</button>`;
   }).join('') : empty('buildings', props.length ? 'لا توجد عقارات مطابقة للبحث.' : 'لا توجد عقارات متاحة حاليًا.');
 }
@@ -76,12 +79,12 @@ function drawReqResults() {
     <div><strong>${escapeHtml(r.code || '')} · ${PROPERTY_TYPES[r.propertyType] || ''} (${TRANSACTION_TYPES[r.transactionType] || ''})</strong>
     <div class="small text-muted">العميل: <a class="text-decoration-none fw-semibold" href="customer-details.html?id=${r.customerId}#requests">${escapeHtml(r.customerName || '—')}</a> (${escapeHtml(r.customerPhone || '')}) · ${REQUEST_STATUSES[r.status] || ''}</div></div>
     <button class="btn btn-sm btn-gold align-self-start" data-contact-req="${r.id}"><i class="bi bi-telephone ms-1"></i>تسجيل تواصل</button></div>
-    <div class="small mt-2">الموقع: <strong>${escapeHtml([r.city, r.districts].filter(Boolean).join(' - ') || 'غير محدد')}</strong> · الميزانية: <strong>${range(r.budgetMin, r.budgetMax, 'جنيه')}</strong> · المساحة: <strong>${range(r.areaMin, r.areaMax, 'م²')}</strong>${r.roomsMin != null ? ` · غرف: <strong>${r.roomsMin}+</strong>` : ''}</div></section>`;
+    <div class="small mt-2">الموقع: <strong>${escapeHtml(r.districts || 'غير محدد')}</strong> · الميزانية: <strong>${range(r.budgetMin, r.budgetMax, 'جنيه')}</strong> · المساحة: <strong>${range(r.areaMin, r.areaMax, 'م²')}</strong>${r.roomsMin != null ? ` · غرف: <strong>${r.roomsMin}+</strong>` : ''}</div></section>`;
   $('reqResults').innerHTML = head + (res.length ? `<div class="small text-muted mb-2">${res.length} عقار مناسب، الأعلى توافقًا أولًا</div>` + res.map(m => {
     const p = m.item;
     return `<div class="req-card mb-3"><div class="d-flex justify-content-between align-items-start gap-2">
       <div><strong>${propTitle(p)}</strong><div class="small text-muted">${where_(p)}</div>
-      <div class="fw-bold" style="color:var(--navy)">${p.price != null ? fmtNumber(p.price) + ' جنيه' : 'السعر غير مسجل'}
+      <div class="fw-bold" style="color:var(--navy)">${priceTxt(p)}
       <span class="small text-muted fw-normal">${[p.area != null && fmtNumber(p.area) + ' م²', p.rooms != null && p.rooms + ' غرف'].filter(Boolean).join(' · ')}</span></div></div>
       <div class="text-center">${pill(m.score)}<div class="small text-muted">${LEVEL_LABELS[m.level]}</div></div></div>
       ${bar(m.score)}<div class="mt-2">${reasonsHtml(m.reasons)}</div>
@@ -98,7 +101,7 @@ function drawPropResults() {
   const res = matchProperty(p, reqs, { minScore });
   const head = `<section class="panel mb-3 p-3"><div class="d-flex justify-content-between flex-wrap gap-2">
     <div><strong>${propTitle(p)}</strong><div class="small text-muted">${where_(p)}</div>
-    <div class="small">${p.price != null ? fmtNumber(p.price) + ' جنيه' : 'السعر غير مسجل'} · ${[p.area != null && fmtNumber(p.area) + ' م²', p.rooms != null && p.rooms + ' غرف'].filter(Boolean).join(' · ')}</div></div>
+    <div class="small">${priceTxt(p)} · ${[p.area != null && fmtNumber(p.area) + ' م²', p.rooms != null && p.rooms + ' غرف'].filter(Boolean).join(' · ')}</div></div>
     <a class="btn btn-sm btn-navy align-self-start" href="property-details.html?id=${p.id}">تفاصيل العقار</a>${favButton(p.id)}</div></section>`;
   $('propResults').innerHTML = head + (res.length ? `<div class="small text-muted mb-2">${res.length} عميل محتمل، الأعلى توافقًا أولًا</div>` + res.map(m => {
     const r = m.item;

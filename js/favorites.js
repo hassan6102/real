@@ -1,5 +1,7 @@
 import { guard, toast } from './layout.js';
 import { listFavorites, removeFavorite } from './services/favorites.js';
+import { displayCode } from './property-model.js';
+import { priceInfo } from './offers-model.js';
 import { escapeHtml, fmtNumber, normalizeAr, PROPERTY_TYPES, TRANSACTION_TYPES, STATUSES } from './utils.js';
 
 const user = await guard({ base: '../', active: 'pages/favorites.html' });
@@ -19,7 +21,7 @@ function pass(f) {
   if ($('fType').value && p.propertyType !== $('fType').value) return false;
   if ($('fStatus').value && p.status !== $('fStatus').value) return false;
   if (!q) return true;
-  return normalizeAr([p.code, p.location?.city, p.location?.district, p.location?.governorate].filter(Boolean).join(' ')).includes(q);
+  return normalizeAr([displayCode(p), p.code, p.location?.district, p.location?.street].filter(Boolean).join(' ')).includes(q);
 }
 
 function card(f) {
@@ -32,10 +34,10 @@ function card(f) {
   }
   const inactive = p.status !== 'available';
   return `<div class="col-12 col-md-6 col-xl-4"><div class="pcard">
-    <div class="d-flex justify-content-between"><strong>${escapeHtml(p.code || '')}</strong><span class="badge st-${p.status}">${STATUSES[p.status] || ''}</span></div>
+    <div class="d-flex justify-content-between"><strong>${escapeHtml(displayCode(p))}</strong><span class="badge st-${p.status}">${STATUSES[p.status] || ''}</span></div>
     <div class="fw-semibold mt-1">${PROPERTY_TYPES[p.propertyType] || ''} · ${TRANSACTION_TYPES[p.transactionType] || ''}</div>
-    <div class="text-muted small">${escapeHtml([p.location?.district, p.location?.city].filter(Boolean).join('، '))}</div>
-    <div class="price">${p.price != null ? fmtNumber(p.price) + ' جنيه' : 'السعر غير مسجل'}</div>
+    <div class="text-muted small">${escapeHtml([p.location?.district, p.location?.street].filter(Boolean).join('، '))}</div>
+    <div class="price">${priceInfo(p).text}${priceInfo(p).note ? ` <small class="text-muted fw-normal">${priceInfo(p).note}</small>` : ''}</div>
     ${inactive ? '<div class="small text-warning-emphasis mb-2"><i class="bi bi-info-circle ms-1"></i>هذا العقار لم يعد متاحًا حاليًا.</div>' : ''}
     <div class="d-flex flex-wrap gap-2"><a class="btn btn-sm btn-navy" href="property-details.html?id=${f.id}">التفاصيل</a>
     <button class="btn btn-sm btn-outline-danger" data-remove="${f.id}"><i class="bi bi-star-fill ms-1"></i>إزالة</button></div></div></div>`;
